@@ -1,5 +1,6 @@
 'use strict'
 
+const { includes, isUndefined } = require('lodash')
 const ko = require('knockout')
 const axios = require('axios')
 const Repo = require('../models/repo')
@@ -7,7 +8,13 @@ const errors = require('../../lib/errors')
 
 const _loaded = ko.observable(false)
 const _syncing = ko.observable(false)
-const _repos = ko.observableArray([]).extend({ queryable: true })
+const _repos = ko.observableArray([]).extend({
+  queryable: (repo, query, key) => {
+    if (key === 'name') {
+      return isUndefined(query) || includes(repo.toLowerCase(), query.toLowerCase())
+    }
+  }
+})
 
 class Repos {
   static get loaded() {
