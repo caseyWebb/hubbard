@@ -1,0 +1,32 @@
+.switch {
+    position: relative; width: 40px;
+    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+}
+.switch-checkbox {
+    display: none;
+}
+.switch-label {
+    display: block; overflow: hidden; cursor: pointer;
+    height: 15px; padding: 0; line-height: 15px;
+    border: 2px solid #CCCCCC; border-radius: 15px;
+    background-color: #FFFFFF;
+    transition: background-color 0.255s ease;
+}
+.switch-label:before {
+    content: "";
+    display: block; width: 15px; margin: 0px;
+    background: #FFFFFF;
+    position: absolute; top: 0; bottom: 0;
+    right: 25px;
+    border: 2px solid #CCCCCC; border-radius: 15px;
+    transition: all 0.25s ease 0s;
+}
+.switch-checkbox:checked + .switch-label {
+    background-color: #49E845;
+}
+.switch-checkbox:checked + .switch-label, .switch-checkbox:checked + .switch-label:before {
+   border-color: #49E845;
+}
+.switch-checkbox:checked + .switch-label:before {
+    right: 0px;
+}

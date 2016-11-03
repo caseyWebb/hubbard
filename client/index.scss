@@ -1,0 +1,11 @@
+body {
+  margin-top: 50px;
+}
+
+.fa.clickable {
+  cursor: pointer;
+  transition: color .125s ease;
+  &:hover {
+    color: #333;
+  }
+}

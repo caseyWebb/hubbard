@@ -1,0 +1,16 @@
+{{#foreach errors}}
+  <div class="alert alert-danger">
+    <button type="button" class="close" data-bind="click: $parent.errors.remove">
+      &times;
+    </button>
+    <strong>Error</strong>
+    <small>
+      {{ message }}
+    </small>
+  </div>
+{{/foreach}}
+{{#if errors().length > 1}}
+  <button class="btn btn-danger pull-right" data-bind="click: errors.clear">
+    Dismiss All
+  </button>
+{{/if}}

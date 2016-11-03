@@ -1,0 +1,40 @@
+<div id="{{guid}}" class="modal fade">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">
+          <small class="text-muted">
+            {{ repo.owner }} /
+          </small>
+          {{ repo.name }}
+        </h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <strong class="text-muted">build</strong>
+            <editor params="value: repo.build_script"></editor>
+          </div>
+          <div class="form-group">
+            <strong class="text-muted">test</strong>
+            <editor params="value: repo.test_script"></editor>
+          </div>
+          <div class="form-group">
+            <strong class="text-muted" data-bind="css: { 'text-danger': showErrors() && !repo.run_script.valid() }">run</strong>
+            <editor params="value: repo.run_script"></editor>
+            {{#if showErrors() && !repo.run_script.valid()}}
+              <br>
+              <div class="alert alert-danger">
+                <strong>run script is required</strong>
+              </div>
+            {{/if}}
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" data-bind="click: save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>

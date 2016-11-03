@@ -1,0 +1,17 @@
+{{#if loaded}}
+<div class="row">
+  <div class="col-lg-8 offset-lg-2">
+    <ul class="repo-list list-group" data-bind="css: { syncing: syncing }">
+      {{#foreach repos}}
+        <repo-list-item params="repo: $data"></repo-list-item>
+      {{/foreach}}
+    </ul>
+  </div>
+</div>
+{{/if}}
+
+{{#ifnot loaded}}
+  <div class="row text-xs-center">
+    <loader></loader>
+  </div>
+{{/ifnot}}

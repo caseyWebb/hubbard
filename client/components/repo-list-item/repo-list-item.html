@@ -1,0 +1,22 @@
+<li class="row list-group-item">
+  <div class="col-xs-10">
+    <small class="text-muted">
+      {{ repo.owner }} /
+    </small>
+    <strong>
+      {{ repo.name }}
+    </strong>
+  </div>
+  <div class="col-xs-1 text-xs-right">
+    {{#if repo.enabled}}
+      <i class="fa fa-wrench clickable text-muted" data-bind="click: showSettings.bind(null, true)"></i>
+    {{/if}}
+  </div>
+  <div class="col-xs-1">
+    <switch class="pull-right" params="checked: repo.enabled" style="margin-top: 5px;"></switch>
+  </div>
+
+  {{#if repo.enabled}}
+    <repo-settings-modal params="repo: repo, visible: showSettings"></repo-settings-modal>
+  {{/if}}
+</li>

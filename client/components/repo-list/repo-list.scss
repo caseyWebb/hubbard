@@ -1,0 +1,6 @@
+.repo-list {
+  &.syncing {
+    opacity: 0.3;
+    transition: opacity .125s ease;
+  }
+}

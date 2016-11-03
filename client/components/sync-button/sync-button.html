@@ -1,0 +1,10 @@
+<button class="btn btn-primary" data-bind="click: sync, disable: syncing">
+  {{#if syncing}}
+    <loader></loader>
+  {{/if}}
+  {{#ifnot syncing}}
+    <i class="fa fa-github"></i>
+    &nbsp;
+    Sync GitHub Repos
+  {{/ifnot}}
+</button>
