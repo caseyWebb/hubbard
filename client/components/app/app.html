@@ -1,12 +1,26 @@
 <errors></errors>
 <div class="container">
+  <a href="/api/auth/logout" class="pull-right">
+    <small>
+      logout
+      &nbsp;
+      <i class="fa fa-lock"></i>
+    </small>
+  </a>
   <div class="text-xs-center">
     <h1>Hubbard</h1>
     <h4 class="text-muted">Über Simple GitHub Deployments</h4>
     <br>
-    <sync-button></sync-button>
+    {{#if authenticated}}
+      <sync-button></sync-button>
+    {{/if}}
   </div>
   <br>
   <br>
-  <repo-list></repo-list>
+  {{#if authenticated}}
+    <repo-list></repo-list>
+  {{/if}}
+  {{#ifnot authenticated}}
+    <login params="authenticated: authenticated"></login>
+  {{/ifnot}}
 </div>

@@ -4,7 +4,6 @@ const http = require('http')
 const path = require('path')
 const co = require('co')
 const { defaults } = require('lodash')
-const serve = require('koa-static')
 const socketio = require('socket.io')
 const PubSub = require('pubsub-js')
 const config = require('./config')
@@ -13,10 +12,14 @@ const app = require('koa')()
 
 defaults(config, {
   environment: 'development',
+  password: '',
   port: 8080,
   host: '0.0.0.0',
-  use_https: false
+  use_https: false,
+  secret: 'not a good secret'
 })
+
+app.keys = [config.secret]
 
 if (!config.github_access_token) {
   console.error(`
@@ -40,7 +43,7 @@ co(function * () {
   }
 
   app.use(require('./api'))
-  app.use(serve(path.resolve(__dirname, 'public')))
+  app.use(require('koa-static')(path.resolve(__dirname, 'public')))
 
   const server = http.createServer(app.callback())
   const io = socketio(server)

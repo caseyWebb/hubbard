@@ -1,0 +1,16 @@
+<div class="row">
+  <form
+    class="col-xs-10 offset-xs-1 col-sm-6 offset-sm-3 col-md-4 offset-md-4 text-xs-center"
+    data-bind="submit: login">
+    <input type="text" class="form-control" placeholder="enter password" data-bind="value: password">
+    <br>
+    <button type="submit" class="btn btn-primary btn-block btn" data-bind="disable: loading">
+      {{#if loading}}
+        <loader params="loading: loading"></loader>
+      {{/if}}
+      {{#ifnot loading}}
+        login
+      {{/ifnot}}
+    </button>
+  </form>
+</div>

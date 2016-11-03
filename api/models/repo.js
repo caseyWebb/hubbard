@@ -73,7 +73,13 @@ class Repo extends Document {
   postSave() {
     return co(function * () {
       if (!this.enabled && this.webhook_id) {
-        yield gh.delete(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`)
+        yield gh
+          .delete(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`)
+          .catch((err) => {
+            if (!err.response.status === 404) {
+              throw new Error(err)
+            }
+          })
         yield getClient()._collections.repos.update({ _id: this._id }, { $unset: { webhook_id: true } })
       }
     }.bind(this))
