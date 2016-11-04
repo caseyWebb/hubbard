@@ -58,7 +58,7 @@ co(function * () {
     if (err) {
       throw new Error(err)
     } else {
-      console.log(`Hubbard listening on port ${config.host}:${config.port}`)
+      console.log(`Hubbard listening on ${config.host}:${config.port}`)
     }
   })
 })
