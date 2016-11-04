@@ -3,9 +3,9 @@
 let _; const { extend } = _ = require('lodash')
 const co = require('co')
 const { Document, getClient } = require('camo')
-const PubSub = require('pubsub-js')
 const config = require('../../config')
 const _db = require('../../lib/db')
+const io = require('../../lib/io')
 const gh = require('../../lib/github-api')
 
 let _compactionQueued
@@ -84,7 +84,7 @@ class Repo extends Document {
       }
     }.bind(this))
     .catch((err) => {
-      PubSub.publish('api.error', err.message)
+      io.emit('api.error', err.message)
       console.error('Error deleting repo webhook:', err.message)
     })
   }

@@ -4,8 +4,6 @@ const http = require('http')
 const path = require('path')
 const co = require('co')
 const { defaults } = require('lodash')
-const socketio = require('socket.io')
-const PubSub = require('pubsub-js')
 const config = require('./config')
 
 const app = require('koa')()
@@ -46,7 +44,8 @@ co(function * () {
   app.use(require('koa-static')(path.resolve(__dirname, 'public')))
 
   const server = http.createServer(app.callback())
-  const io = socketio(server)
+
+  require('./lib/io')(server)
 
   yield require('./lib/db')
   yield require('./api/models/repo').sync()
@@ -57,11 +56,5 @@ co(function * () {
     } else {
       console.log(`Hubbard listening on port ${config.host}:${config.port}`)
     }
-  })
-
-  io.on('connection', (socket) => {
-    const handler = (msg, data) => socket.emit('api.error', data)
-    PubSub.subscribe('api.error', handler)
-    socket.on('disconnect', () => PubSub.unsubscribe(handler))
   })
 })
