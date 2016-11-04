@@ -12,7 +12,6 @@
       <div class="modal-body">
         <form>
           <div class="form-group">
-            <strong class="text-muted" data-bind="css: { 'text-danger': showErrors() && !repo.script.valid() }">deploy script</strong>
             <editor params="value: repo.script"></editor>
             {{#if showErrors() && !repo.script.valid()}}
             <br>

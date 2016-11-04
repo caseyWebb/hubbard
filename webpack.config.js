@@ -4,7 +4,6 @@ const CompressionPlugin = require('compression-webpack-plugin')
 
 module.exports = {
   entry: [
-    'babel-polyfill',
     './client/index.js'
   ],
 
@@ -16,16 +15,6 @@ module.exports = {
 
   module: {
     loaders: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules)/,
-        loader: 'babel',
-        query: {
-          cacheDirectory: true,
-          presets: ['es2015', 'stage-3']
-        }
-      },
-
       {
         test: /\.html$/,
         loader: 'html'
