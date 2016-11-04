@@ -4,7 +4,7 @@ const { every } = require('lodash')
 const ko = require('knockout')
 const axios = require('axios')
 const { merge } = require('ko-contrib-utils')
-const errors = require('../../lib/errors')
+const error = require('../../lib/errors')
 
 class Repo {
   constructor(r) {
@@ -15,7 +15,7 @@ class Repo {
   save() {
     return axios
       .patch(`/api/repos/${this._id()}`, ko.toJS(this))
-      .catch((err) => errors.push(err))
+      .catch((err) => error(err))
   }
 }
 

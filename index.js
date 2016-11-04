@@ -4,6 +4,7 @@ const http = require('http')
 const path = require('path')
 const co = require('co')
 const { defaults } = require('lodash')
+const mkdirp = require('mkdirp')
 const config = require('./config')
 
 const app = require('koa')()
@@ -39,6 +40,11 @@ co(function * () {
     config.host = yield require('./lib/localtunnel')
     config.port = 80
   }
+
+  yield new Promise((resolve, reject) =>
+    mkdirp(path.join(__dirname, '.repos'), (err) => err
+      ? reject(err)
+      : resolve()))
 
   app.use(require('./api'))
   app.use(require('koa-static')(path.resolve(__dirname, 'public')))

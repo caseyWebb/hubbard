@@ -1,8 +1,13 @@
 'use strict'
 
-let _; const { extend } = _ = require('lodash')
+const fs = require('fs-promise')
+const path = require('path')
+let _; const { extend, noop } = _ = require('lodash')
 const co = require('co')
 const { Document, getClient } = require('camo')
+const mkdirp = require('mkdirp')
+const Git = require('nodegit')
+const rimraf = require('rimraf')
 const config = require('../../config')
 const _db = require('../../lib/db')
 const io = require('../../lib/io')
@@ -18,10 +23,18 @@ class Repo extends Document {
   constructor() {
     super()
 
-    this._id = String
-    this.owner = String
-    this.name = String
-    this.url = String
+    this.owner = {
+      type: String,
+      required: true
+    }
+    this.name = {
+      type: String,
+      required: true
+    }
+    this.url = {
+      type: String,
+      required: true
+    }
     this.enabled = {
       type: Boolean,
       default: false
@@ -77,15 +90,64 @@ class Repo extends Document {
           .delete(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`)
           .catch((err) => {
             if (!err.response.status === 404) {
-              throw new Error(err)
+              console.error('Failed to delete webhook')
+              throw new Error('Failed to delete webhook')
             }
           })
-        yield getClient()._collections.repos.update({ _id: this._id }, { $unset: { webhook_id: true } })
+        yield new Promise((resolve, reject) =>
+          getClient()._collections.repos.update(
+            { _id: this._id },
+            { $unset: { webhook_id: true } },
+            (err) => err
+              ? reject(err)
+              : resolve(err)))
+      }
+
+      if (this.enabled) {
+        this.cloneRepo()
+      } else {
+        rimraf(path.join(__dirname, '../../.repos', this.name), noop)
       }
     }.bind(this))
+  }
+
+  cloneRepo() {
+    return co(function * () {
+      const dir = path.join(__dirname, '../../.repos', this.name)
+
+      try {
+        yield fs.stat(dir)
+        console.log('Repository folder already exists for', this.name)
+        return
+      } catch(err) {
+        // check if error defined and the error code is "not exists"
+        if (err && err.code === 'ENOENT') {
+          yield new Promise((resolve, reject) => mkdirp(dir, (err) => err
+            ? reject('Failed to create repository directory')
+            : resolve()))
+        }
+      }
+
+      console.log('Cloning repository', this.name)
+      io.emit(`repo_clone_started.${this._id}`, { id: this._id })
+
+      yield Git
+        .Clone(`https://github.com/${this.owner}/${this.name}.git`, dir, {
+          fetchOpts: {
+            callbacks: {
+              certificateCheck: () => 1,
+              credentials: () => Git.Cred.userpassPlaintextNew(config.github_access_token, 'x-oauth-basic')
+            }
+          }
+        })
+
+      console.log('Finished cloning repository', this.name)
+      io.emit(`repo_clone_success.${this._id}`), { id: this._id }
+    }.bind(this))
     .catch((err) => {
-      io.emit('api.error', err.message)
-      console.error('Error deleting repo webhook:', err.message)
+      console.log('Failed cloning repository', this.name)
+      io.emit(`repo_clone_failed.${this._id}`)
+      return Promise.reject(err)
     })
   }
 
