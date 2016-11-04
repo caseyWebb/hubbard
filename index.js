@@ -51,8 +51,6 @@ co(function * () {
 
   const server = http.createServer(app.callback())
 
-  require('./lib/io')(server)
-
   yield require('./lib/db')
   yield require('./api/models/repo').sync()
 

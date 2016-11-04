@@ -12,21 +12,11 @@
       <div class="modal-body">
         <form>
           <div class="form-group">
-            <strong class="text-muted">build</strong>
-            <editor params="value: repo.build_script"></editor>
-          </div>
-          <div class="form-group">
-            <strong class="text-muted">test</strong>
-            <editor params="value: repo.test_script"></editor>
-          </div>
-          <div class="form-group">
-            <strong class="text-muted" data-bind="css: { 'text-danger': showErrors() && !repo.run_script.valid() }">run</strong>
-            <editor params="value: repo.run_script"></editor>
-            {{#if showErrors() && !repo.run_script.valid()}}
-              <br>
-              <div class="alert alert-danger">
-                <strong>run script is required</strong>
-              </div>
+            <strong class="text-muted" data-bind="css: { 'text-danger': showErrors() && !repo.script.valid() }">deploy script</strong>
+            <editor params="value: repo.script"></editor>
+            {{#if showErrors() && !repo.script.valid()}}
+            <br>
+            <strong class="text-danger">run script is required</strong>
             {{/if}}
           </div>
         </form>

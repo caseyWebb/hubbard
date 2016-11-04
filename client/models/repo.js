@@ -9,12 +9,12 @@ const error = require('../../lib/errors')
 class Repo {
   constructor(r) {
     merge(this, r)
-    this.run_script.valid = ko.pureComputed(() => !_isOnlyComments(this.run_script()))
+    this.script.valid = ko.pureComputed(() => !_isOnlyComments(this.script()))
   }
 
   save() {
     return axios
-      .patch(`/api/repos/${this._id()}`, ko.toJS(this))
+      .patch(`/api/repos/${this._id()}`, ko.toJS(this), { timeout: 0 })
       .catch((err) => error(err))
   }
 }

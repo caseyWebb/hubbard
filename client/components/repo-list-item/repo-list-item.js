@@ -1,7 +1,6 @@
 'use strict'
 
 const ko = require('knockout')
-const socket = require('socket.io-client')()
 
 class RepoListItem {
   constructor({ repo }) {
@@ -10,14 +9,10 @@ class RepoListItem {
     this.showSettings = ko.observable(false)
 
     this.sub = this.repo.enabled.subscribe((v) => {
-      if (!v || this.repo.run_script.valid()) {
+      if (!v || this.repo.script.valid()) {
         this.repo.save()
       }
     })
-
-    socket.on(`repo_clone_started.${this.repo._id()}`, () => this.cloning(true))
-    socket.on(`repo_clone_success.${this.repo._id()}`, () => this.cloning(false))
-    socket.on(`repo_clone_failed.${this.repo._id()}`, () => this.cloning(false))
   }
 
   dispose() {

@@ -1,16 +1,16 @@
 'use strict'
 
-const fs = require('fs-promise')
 const path = require('path')
-let _; const { extend, noop } = _ = require('lodash')
+const { exec } = require('child_process')
+let _; const { extend } = _ = require('lodash')
 const co = require('co')
 const { Document, getClient } = require('camo')
+const fs = require('fs-promise')
 const mkdirp = require('mkdirp')
 const Git = require('nodegit')
 const rimraf = require('rimraf')
 const config = require('../../config')
 const _db = require('../../lib/db')
-const io = require('../../lib/io')
 const gh = require('../../lib/github-api')
 
 let _compactionQueued
@@ -31,23 +31,11 @@ class Repo extends Document {
       type: String,
       required: true
     }
-    this.url = {
-      type: String,
-      required: true
-    }
     this.enabled = {
       type: Boolean,
       default: false
     }
-    this.build_script = {
-      type: String,
-      default: '#!/bin/bash\n\n'
-    }
-    this.test_script = {
-      type: String,
-      default: '#!/bin/bash\n\n'
-    }
-    this.run_script = {
+    this.script = {
       type: String,
       default: '#!/bin/bash\n\n'
     }
@@ -104,51 +92,79 @@ class Repo extends Document {
       }
 
       if (this.enabled) {
-        this.cloneRepo()
+        yield this.deploy()
       } else {
-        rimraf(path.join(__dirname, '../../.repos', this.name), noop)
+        yield this.deleteGitRepo()
       }
     }.bind(this))
   }
 
-  cloneRepo() {
-    return co(function * () {
-      const dir = path.join(__dirname, '../../.repos', this.name)
+  static * deploy(id) {
+    const repo = yield this.findOne({ _id: id })
+    yield repo.deploy()
+  }
 
-      try {
-        yield fs.stat(dir)
-        console.log('Repository folder already exists for', this.name)
-        return
-      } catch(err) {
-        // check if error defined and the error code is "not exists"
-        if (err && err.code === 'ENOENT') {
-          yield new Promise((resolve, reject) => mkdirp(dir, (err) => err
-            ? reject('Failed to create repository directory')
-            : resolve()))
-        }
+  * deleteGitRepo() {
+    return new Promise((resolve, reject) =>
+      rimraf(this.dir, (err) => err
+        ? reject(err)
+        : resolve()))
+  }
+
+  * deploy() {
+    yield this.ensureGitRepo()
+    yield this.writePostCheckoutScript()
+    this.fetchLatest()
+  }
+
+  * ensureGitRepo() {
+    try {
+      yield fs.stat(this.dir)
+      console.log('Repository folder already exists for', this.name)
+      return
+    } catch(err) {
+      // check if error defined and the error code is "not exists"
+      if (err && err.code === 'ENOENT') {
+        yield new Promise((resolve, reject) => mkdirp(this.dir, (err) => err
+          ? reject('Failed to create repository directory')
+          : resolve()))
       }
+    }
 
-      console.log('Cloning repository', this.name)
-      io.emit(`repo_clone_started.${this._id}`, { id: this._id })
+    const execOpts = { cwd: path.join(__dirname, '../../.repos', this.name) }
+    yield new Promise((resolve, reject) =>
+      exec('git', ['init'], execOpts, (err) => err ? reject(err) : resolve()))
+  }
 
-      yield Git
-        .Clone(`https://github.com/${this.owner}/${this.name}.git`, dir, {
-          fetchOpts: {
-            callbacks: {
-              certificateCheck: () => 1,
-              credentials: () => Git.Cred.userpassPlaintextNew(config.github_access_token, 'x-oauth-basic')
-            }
-          }
-        })
+  * fetchLatest() {
+    const execOpts = { cwd: path.join(__dirname, '../../.repos', this.name) }
+    const repoUrl = `https://${config.github_access_token}:x-oauth-basic@github.com/${this.owner}/${this.name}.git`
 
-      console.log('Finished cloning repository', this.name)
-      io.emit(`repo_clone_success.${this._id}`), { id: this._id }
-    }.bind(this))
-    .catch((err) => {
-      console.log('Failed cloning repository', this.name)
-      io.emit(`repo_clone_failed.${this._id}`)
-      return Promise.reject(err)
-    })
+    console.log('Fetching latest for', this.name)
+
+    yield new Promise((resolve, reject) =>
+      exec('git', ['fetch', repoUrl], execOpts, (err) => err ? reject(err) : resolve()))
+    yield new Promise((resolve, reject) =>
+      exec('git', ['checkout', 'FETCH_HEAD'], execOpts, (err) => err ? reject(err) : resolve()))
+
+    console.log('Latest fetched for', this.name)
+  }
+
+  * writePostCheckoutScript() {
+    const fd = path.join(this.dir, '.git/hooks/post-checkout')
+    yield fs.write(fd, this.script)
+    yield fs.chmod(fd, '+x')
+  }
+
+  get dir() {
+    return path.join(__dirname, '../../.repos', this.name)
+  }
+
+  static get gitFetchCallbacks() {
+    return {
+      certificateCheck: () => 1,
+      credentials: () => Git.Cred.userpassPlaintextNew(config.github_access_token, 'x-oauth-basic')
+    }
   }
 
   static * sync() {

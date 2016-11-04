@@ -7,6 +7,6 @@ api.use(require('koa-json')())
 
 api.use(require('./controllers/auth'))
 api.use(require('./controllers/repos'))
-api.use(require('./controllers/test'))
+api.use(require('./controllers/webhook'))
 
 module.exports = api.routes()
