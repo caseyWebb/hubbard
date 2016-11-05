@@ -9,7 +9,7 @@ class RepoSettingModal {
     this.guid = `repo-settings-modal-${this.repo.owner()}-${this.repo.name().replace(/\./g, '-')}`
     this.showErrors = ko.observable(false)
 
-    if (!this.repo.script.valid()) {
+    if (!this.repo.start_script.valid()) {
       visible(true)
     }
 
@@ -22,7 +22,7 @@ class RepoSettingModal {
             : 'hide'))
 
       this.$modal.on('hidden.bs.modal', () => {
-        if (!this.repo.script.valid()) {
+        if (!this.repo.start_script.valid()) {
           this.repo.enabled(false)
         }
       })
@@ -30,7 +30,7 @@ class RepoSettingModal {
   }
 
   save(data, e) {
-    if (!this.repo.script.valid()) {
+    if (!this.repo.start_script.valid()) {
       this.showErrors(true)
       e.preventDefault()
     } else {

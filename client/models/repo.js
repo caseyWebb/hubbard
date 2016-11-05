@@ -9,7 +9,7 @@ const { scriptIsNoop } = require('../../lib/utils')
 class Repo {
   constructor(r) {
     merge(this, r)
-    this.script.valid = ko.pureComputed(() => !scriptIsNoop(this.script()))
+    this.start_script.valid = ko.pureComputed(() => !scriptIsNoop(this.start_script()))
   }
 
   save() {

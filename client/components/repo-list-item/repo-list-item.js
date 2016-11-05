@@ -9,7 +9,7 @@ class RepoListItem {
     this.showSettings = ko.observable(false)
 
     this.sub = this.repo.enabled.subscribe((v) => {
-      if (!v || this.repo.script.valid()) {
+      if (!v || this.repo.start_script.valid()) {
         this.repo.save()
       }
     })

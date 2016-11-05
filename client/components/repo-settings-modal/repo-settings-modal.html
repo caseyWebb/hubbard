@@ -12,17 +12,18 @@
       <div class="modal-body">
         <form>
           <div class="form-group">
-            <editor params="value: repo.script"></editor>
-            {{#if showErrors() && !repo.script.valid()}}
-            <br>
-            <strong class="text-danger">script is required</strong>
+            <strong class="text-muted" data-bind="css: { 'text-danger': showErrors() && !repo.start_script.valid() }">start</strong>
+            <editor params="value: repo.start_script"></editor>
+            {{#if showErrors() && !repo.start_script.valid()}}
+              <br>
+              <div class="alert alert-danger">
+                <strong>start script is required</strong>
+              </div>
             {{/if}}
           </div>
-          <div class="form-check">
-            <label class="form-check-label">
-              <input class="form-check-input" type="checkbox" data-bind="checked: detach">
-              run detached
-            </label>
+          <div class="form-group">
+            <strong class="text-muted">stop</strong>
+            <editor params="value: repo.stop_script"></editor>
           </div>
         </form>
       </div>
