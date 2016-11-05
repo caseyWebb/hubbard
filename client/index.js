@@ -1,6 +1,5 @@
 'use strict'
 
-const $ = window.$ = window.jQuery = require('jquery')
 const ko = window.ko = require('knockout')
 
 ko.options.deferUpdates = true
@@ -11,10 +10,6 @@ ko.punches.enableAll()
 require('../lib/ko-extender-cast')
 require('../lib/ko-extender-queryable')
 
-require('font-awesome/css/font-awesome.css')
-window.Tether = require('tether')
-require('bootstrap/dist/js/bootstrap.js')
-require('bootstrap/dist/css/bootstrap.css')
 require('./index.scss')
 
 require('./components/app')

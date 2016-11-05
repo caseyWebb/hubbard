@@ -3,7 +3,6 @@
 const path = require('path')
 const { exec, spawn } = require('child_process')
 let _; const { extend } = _ = require('lodash')
-const co = require('co')
 const { Document, getClient } = require('camo')
 const fs = require('fs-promise')
 const mergeStream = require('merge-stream')
@@ -47,127 +46,109 @@ class Repo extends Document {
     this.webhook_id = Number
   }
 
-  preSave() {
-    return co(function * () {
-      if (this.enabled) {
-        const hook = {
-          name: 'web',
-          active: true,
-          events: ['push'],
-          config: {
-            url: `http${config.use_https ? 's' : ''}://${config.host}:${config.port}/api/webhook`,
-            content_type: 'json'
-          }
-        }
-
-        try {
-          yield gh
-            .patch(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`, hook)
-        } catch (e) {
-          yield gh
-            .post(`/repos/${this.owner}/${this.name}/hooks`, hook)
-            .then(({ data: { id } }) => {
-              this.webhook_id = id
-            })
+  async preSave() {
+    if (this.enabled) {
+      const hook = {
+        name: 'web',
+        active: true,
+        events: ['push'],
+        config: {
+          url: `http${config.use_https ? 's' : ''}://${config.host}:${config.port}/api/webhook`,
+          content_type: 'json'
         }
       }
 
-      Repo.queueCompaction()
-    }.bind(this))
-  }
-
-  postSave() {
-    return co(function * () {
-      if (!this.enabled && this.webhook_id) {
-        yield gh
-          .delete(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`)
-          .catch((err) => {
-            if (!err.response.status === 404) {
-              console.error('Failed to delete webhook')
-              throw new Error('Failed to delete webhook')
-            }
+      try {
+        await gh
+          .patch(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`, hook)
+      } catch (e) {
+        await gh
+          .post(`/repos/${this.owner}/${this.name}/hooks`, hook)
+          .then(({ data: { id } }) => {
+            this.webhook_id = id
           })
-        yield new Promise((resolve, reject) =>
-          getClient()._collections.repos.update(
-            { _id: this._id },
-            { $unset: { webhook_id: true } },
-            (err) => err
-              ? reject(err)
-              : resolve(err)))
-      }
-
-      if (this.enabled) {
-        yield this.deploy()
-      } else {
-        yield this.deleteGitRepo()
-      }
-    }.bind(this))
-  }
-
-  static * deploy(id) {
-    const repo = yield this.findOne({ _id: id })
-    yield repo.deploy()
-  }
-
-  * deleteGitRepo() {
-    return rimraf(this.dir)
-  }
-
-  * deploy() {
-    yield this.ensureGitRepo()
-    this.stop()
-    this.fetchLatest()
-    this.start()
-  }
-
-  * ensureGitRepo() {
-    try {
-      yield fs.stat(this.dir)
-      console.log('Repository folder already exists for', this.name)
-      return
-    } catch(err) {
-      // check if error defined and the error code is "not exists"
-      if (err && err.code === 'ENOENT') {
-        yield mkdirp(this.dir)
       }
     }
 
-    yield new Promise((resolve, reject) =>
-      exec('git', ['init'], { cwd: this.dir }, (err) => err ? reject(err) : resolve()))
+    Repo.queueCompaction()
   }
 
-  * fetchLatest() {
+  async postSave() {
+    if (!this.enabled && this.webhook_id) {
+      await gh
+        .delete(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`)
+        .catch((err) => {
+          if (!err.response.status === 404) {
+            console.error('Failed to delete webhook')
+            throw new Error('Failed to delete webhook')
+          }
+        })
+      await new Promise((resolve, reject) =>
+        getClient()._collections.repos.update(
+          { _id: this._id },
+          { $unset: { webhook_id: true } },
+          (err) => err
+            ? reject(err)
+            : resolve(err)))
+    }
+
+    if (this.enabled) {
+      await this.deploy()
+    } else {
+      await this.cleanup()
+    }
+  }
+
+  async cleanup() {
+    await this.stop()
+    await rimraf(this.dir)
+  }
+
+  async deploy() {
+    await this.ensureGitRepo()
+    await this.stop()
+    await this.fetchLatest()
+    await this.start()
+  }
+
+  async ensureGitRepo() {
+    await mkdirp(this.dir)
+    await new Promise((resolve, reject) =>
+      exec('git init', { cwd: this.dir }, (err) => err ? reject(err) : resolve()))
+  }
+
+  async fetchLatest() {
     const encoding = 'utf8'
     const repoUrl = `https://${config.github_access_token}:x-oauth-basic@github.com/${this.owner}/${this.name}.git`
 
     console.log('Fetching latest for', this.name)
 
-    yield new Promise((resolve, reject) =>
-      exec('git', ['fetch', repoUrl], { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
-    yield new Promise((resolve, reject) =>
-      exec('git', ['checkout', 'FETCH_HEAD'], { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
+    await new Promise((resolve, reject) =>
+      exec(`git fetch ${repoUrl}`, { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
+    await new Promise((resolve, reject) =>
+      exec('git checkout FETCH_HEAD', { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
 
     console.log('Latest fetched for', this.name)
   }
 
-  * start() {
-    yield this.runScript('start')
+  async start() {
+    await this.runScript('start')
   }
 
-  * stop() {
-    yield this.runScript('stop')
-    yield rimraf(path.join(this.dir, '.hubbard'))
+  async stop() {
+    await this.runScript('stop')
+    await rimraf(path.join(this.dir, '.hubbard'))
   }
 
-  * runScript(s) {
-    yield mkdirp(path.join(this.dir, '.hubbard/scripts'))
-    yield mkdirp(path.join(this.dir, '.hubbard/logs'))
+  async runScript(s) {
+    await mkdirp(path.join(this.dir, '.hubbard/scripts'))
+    await mkdirp(path.join(this.dir, '.hubbard/logs'))
 
     const scriptPath = path.join(this.dir, '.hubbard/scripts', s)
     const logfilePath = path.join(this.dir, '.hubbard/logs', `${s}.log`)
 
-    yield fs.write(scriptPath, this[`${s}_script`])
-    yield fs.chmod(scriptPath, '+x')
+    await fs.writeFile(scriptPath, this[`${s}_script`])
+    await fs.chmod(scriptPath, 500)
 
     const proc = spawn(scriptPath, { cwd: this.dir, encoding: 'utf8', env: process.env })
 
@@ -175,7 +156,7 @@ class Repo extends Document {
     const logfileStream = fs.createWriteStream(logfilePath, 'utf8')
     logStream.pipe(logfileStream)
 
-    yield new Promise((resolve, reject) =>
+    await new Promise((resolve, reject) =>
       proc.on('close', (code) => {
         if (code !== 0) {
           reject(`Script exited with non-zero exit code ${code}`)
@@ -189,16 +170,16 @@ class Repo extends Document {
     return path.join(__dirname, '../../.repos', this.name)
   }
 
-  static * sync() {
+  static async sync() {
     console.log('Syncing repositories...')
 
-    const { data: _repos } = yield gh.get('/user/repos')
-    const repos = yield _(_repos)
+    const { data: _repos } = await gh.get('/user/repos')
+    const repos = await _(_repos)
       .filter((r) => r.permissions.admin)
-      .map((r) => co(function * () {
+      .map(async function(r) {
         r._id = r.id.toString()
         delete r.id
-        let repo = yield Repo.findOne({ _id: r._id })
+        let repo = await Repo.findOne({ _id: r._id })
         if (!repo) {
           repo = Repo.create(r)
         }
@@ -207,8 +188,8 @@ class Repo extends Document {
           name: r.name,
           url: r.html_url
         })
-        return yield repo.save()
-      }))
+        return await repo.save()
+      })
       .value()
 
     console.log('Finished syncing repositories')
@@ -223,24 +204,14 @@ class Repo extends Document {
       return
     }
     _compactionQueued = true
+    setTimeout(() => this.compactDataFile().then(() => _compactionQueued = false), 5000)
+  }
 
-    setTimeout(() => {
-      console.log('Compacting datafile...')
-
-      co(function * () {
-        const db = yield _db
-        db._collections.repos.persistence.compactDatafile()
-      })
-        .then(() => {
-          console.log('Finished compacting datafile')
-        })
-        .catch((err) => {
-          console.error('Error compacting datafile!', err)
-        })
-        .then(() => {
-          _compactionQueued = false
-        })
-    }, 5000)
+  static async compactDataFile() {
+    const db = await _db
+    if (db._collections.repos) {
+      db._collections.repos.persistence.compactDatafile()
+    }
   }
 }
 

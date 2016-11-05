@@ -4,10 +4,10 @@ const router = require('koa-router')
 const Repos = require('../models/repo')
 
 module.exports = router({ prefix: '/webhook' })
-  .post('/', function * (next) {
-    yield Repos.deploy(this.request.body.id)
-    this.status = 200
-    yield next
+  .post('/', async (ctx) => {
+    const repo = await Repos.findOne({ _id: ctx.request.body.id })
+    await repo.deploy()
+    ctx.status = 200
   })
 
   .routes()

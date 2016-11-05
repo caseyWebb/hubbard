@@ -6,21 +6,18 @@ const authenticate = require('../middleware/authenticate')
 const Repos = require('../models/repo')
 
 module.exports = router({ prefix: '/repos' })
-  .get('/', authenticate, function * (next) {
-    this.body = yield Repos.find({}, { sort: ['-enabled', 'name'] })
-    yield next
+  .get('/', authenticate, async (ctx) => {
+    ctx.body = await Repos.find({}, { sort: ['-enabled', 'name'] })
   })
 
-  .patch('/:id', authenticate, function * (next) {
-    const repo = yield Repos.findOne({ _id: this.params.id })
-    extend(repo, this.request.body)
-    this.body = yield repo.save()
-    yield next
+  .patch('/:id', authenticate, async (ctx) => {
+    const repo = await Repos.findOne({ _id: ctx.params.id })
+    extend(repo, ctx.request.body)
+    ctx.body = await repo.save()
   })
 
-  .get('/sync', authenticate, function * (next) {
-    this.body = yield Repos.sync()
-    yield next
+  .get('/sync', authenticate, async (ctx) => {
+    ctx.body = await Repos.sync()
   })
 
   .routes()
