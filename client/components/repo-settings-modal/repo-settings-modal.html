@@ -14,17 +14,17 @@
           <div class="form-group">
             <strong class="text-muted" data-bind="css: { 'text-danger': showErrors() && !repo.start_script.valid() }">start</strong>
             <editor params="value: repo.start_script"></editor>
-            {{#if showErrors() && !repo.start_script.valid()}}
-              <br>
-              <div class="alert alert-danger">
-                <strong>start script is required</strong>
-              </div>
-            {{/if}}
           </div>
           <div class="form-group">
             <strong class="text-muted">stop</strong>
             <editor params="value: repo.stop_script"></editor>
           </div>
+          {{#if showErrors() && !repo.start_script.valid()}}
+            <br>
+            <div class="alert alert-danger">
+              <strong>start script is required</strong>
+            </div>
+          {{/if}}
         </form>
       </div>
       <div class="modal-footer">
