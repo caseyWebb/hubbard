@@ -3,20 +3,31 @@
 const http = require('http')
 const path = require('path')
 const co = require('co')
-const { defaults } = require('lodash')
+const _ = require('lodash')
 const mkdirp = require('mkdirp')
 const config = require('./config')
 
 const app = require('koa')()
 
-defaults(config, {
-  environment: 'development',
-  password: '',
-  port: 8080,
-  host: '0.0.0.0',
-  use_https: false,
-  secret: 'not a good secret'
-})
+_(config)
+  .defaults({
+    environment: 'development',
+    password: '',
+    port: 8080,
+    host: '0.0.0.0',
+    use_https: false,
+    secret: 'not a good secret'
+  })
+  .extendWith({
+    environment: process.env.NODE_ENV,
+    password: process.env.HUBBARD_PASSWORD,
+    port: process.env.HUBBARD_PORT,
+    host: process.env.HUBBARD_HOST,
+    use_https: process.env.HUBBARD_USE_HTTPS,
+    secret: process.env.HUBBARD_SECRET,
+    github_access_token: process.env.HUBBARD_GITHUB_ACCESS_TOKEN
+  }, (c, env) => env || c)
+  .value()
 
 app.keys = [config.secret]
 
