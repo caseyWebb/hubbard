@@ -15,8 +15,14 @@
             <editor params="value: repo.script"></editor>
             {{#if showErrors() && !repo.script.valid()}}
             <br>
-            <strong class="text-danger">run script is required</strong>
+            <strong class="text-danger">script is required</strong>
             {{/if}}
+          </div>
+          <div class="form-check">
+            <label class="form-check-label">
+              <input class="form-check-input" type="checkbox" data-bind="checked: detach">
+              run detached
+            </label>
           </div>
         </form>
       </div>

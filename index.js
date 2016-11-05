@@ -41,10 +41,7 @@ co(function * () {
     config.port = 80
   }
 
-  yield new Promise((resolve, reject) =>
-    mkdirp(path.join(__dirname, '.repos'), (err) => err
-      ? reject(err)
-      : resolve()))
+  yield mkdirp(path.join(__dirname, '.repos'))
 
   app.use(require('./api'))
   app.use(require('koa-static')(path.resolve(__dirname, 'public')))

@@ -1,17 +1,18 @@
 'use strict'
 
 const path = require('path')
-const { exec } = require('child_process')
+const { exec, spawn } = require('child_process')
 let _; const { extend } = _ = require('lodash')
 const co = require('co')
 const { Document, getClient } = require('camo')
 const fs = require('fs-promise')
+const mergeStream = require('merge-stream')
 const mkdirp = require('mkdirp')
-const Git = require('nodegit')
 const rimraf = require('rimraf')
 const config = require('../../config')
 const _db = require('../../lib/db')
 const gh = require('../../lib/github-api')
+const { scriptIsNoop } = require('../../lib/utils')
 
 let _compactionQueued
 
@@ -35,7 +36,12 @@ class Repo extends Document {
       type: Boolean,
       default: false
     }
-    this.script = {
+    this.start_script = {
+      type: String,
+      required: true,
+      default: '#!/bin/bash\n\n'
+    }
+    this.stop_script = {
       type: String,
       default: '#!/bin/bash\n\n'
     }
@@ -50,7 +56,7 @@ class Repo extends Document {
           active: true,
           events: ['push'],
           config: {
-            url: `http${config.use_https ? 's' : ''}://${config.host}:${config.port}/api/repos/webhook`,
+            url: `http${config.use_https ? 's' : ''}://${config.host}:${config.port}/api/webhook`,
             content_type: 'json'
           }
         }
@@ -105,16 +111,14 @@ class Repo extends Document {
   }
 
   * deleteGitRepo() {
-    return new Promise((resolve, reject) =>
-      rimraf(this.dir, (err) => err
-        ? reject(err)
-        : resolve()))
+    return rimraf(this.dir)
   }
 
   * deploy() {
     yield this.ensureGitRepo()
-    yield this.writePostCheckoutScript()
+    this.stop()
     this.fetchLatest()
+    this.start()
   }
 
   * ensureGitRepo() {
@@ -125,46 +129,65 @@ class Repo extends Document {
     } catch(err) {
       // check if error defined and the error code is "not exists"
       if (err && err.code === 'ENOENT') {
-        yield new Promise((resolve, reject) => mkdirp(this.dir, (err) => err
-          ? reject('Failed to create repository directory')
-          : resolve()))
+        yield mkdirp(this.dir)
       }
     }
 
-    const execOpts = { cwd: path.join(__dirname, '../../.repos', this.name) }
     yield new Promise((resolve, reject) =>
-      exec('git', ['init'], execOpts, (err) => err ? reject(err) : resolve()))
+      exec('git', ['init'], { cwd: this.dir }, (err) => err ? reject(err) : resolve()))
   }
 
   * fetchLatest() {
-    const execOpts = { cwd: path.join(__dirname, '../../.repos', this.name) }
+    const encoding = 'utf8'
     const repoUrl = `https://${config.github_access_token}:x-oauth-basic@github.com/${this.owner}/${this.name}.git`
 
     console.log('Fetching latest for', this.name)
 
     yield new Promise((resolve, reject) =>
-      exec('git', ['fetch', repoUrl], execOpts, (err) => err ? reject(err) : resolve()))
+      exec('git', ['fetch', repoUrl], { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
     yield new Promise((resolve, reject) =>
-      exec('git', ['checkout', 'FETCH_HEAD'], execOpts, (err) => err ? reject(err) : resolve()))
+      exec('git', ['checkout', 'FETCH_HEAD'], { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
 
     console.log('Latest fetched for', this.name)
   }
 
-  * writePostCheckoutScript() {
-    const fd = path.join(this.dir, '.git/hooks/post-checkout')
-    yield fs.write(fd, this.script)
-    yield fs.chmod(fd, '+x')
+  * start() {
+    yield this.runScript('start')
+  }
+
+  * stop() {
+    yield this.runScript('stop')
+    yield rimraf(path.join(this.dir, '.hubbard'))
+  }
+
+  * runScript(s) {
+    yield mkdirp(path.join(this.dir, '.hubbard/scripts'))
+    yield mkdirp(path.join(this.dir, '.hubbard/logs'))
+
+    const scriptPath = path.join(this.dir, '.hubbard/scripts', s)
+    const logfilePath = path.join(this.dir, '.hubbard/logs', `${s}.log`)
+
+    yield fs.write(scriptPath, this[`${s}_script`])
+    yield fs.chmod(scriptPath, '+x')
+
+    const proc = spawn(scriptPath, { cwd: this.dir, encoding: 'utf8' })
+
+    const logStream = mergeStream(proc.stdout, proc.stderr)
+    const logfileStream = fs.createWriteStream(logfilePath, 'utf8')
+    logStream.pipe(logfileStream)
+
+    yield new Promise((resolve, reject) =>
+      proc.on('close', (code) => {
+        if (code !== 0) {
+          reject(`Script exited with non-zero exit code ${code}`)
+        } else {
+          resolve()
+        }
+      }))
   }
 
   get dir() {
     return path.join(__dirname, '../../.repos', this.name)
-  }
-
-  static get gitFetchCallbacks() {
-    return {
-      certificateCheck: () => 1,
-      credentials: () => Git.Cred.userpassPlaintextNew(config.github_access_token, 'x-oauth-basic')
-    }
   }
 
   static * sync() {
