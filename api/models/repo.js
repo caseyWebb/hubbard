@@ -169,7 +169,7 @@ class Repo extends Document {
     yield fs.write(scriptPath, this[`${s}_script`])
     yield fs.chmod(scriptPath, '+x')
 
-    const proc = spawn(scriptPath, { cwd: this.dir, encoding: 'utf8' })
+    const proc = spawn(scriptPath, { cwd: this.dir, encoding: 'utf8', env: process.env })
 
     const logStream = mergeStream(proc.stdout, proc.stderr)
     const logfileStream = fs.createWriteStream(logfilePath, 'utf8')
