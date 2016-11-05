@@ -5,9 +5,10 @@ const { exec, spawn } = require('child_process')
 let _; const { extend } = _ = require('lodash')
 const { Document, getClient } = require('camo')
 const fs = require('fs-promise')
-const mergeStream = require('merge-stream')
+const mergeStreams = require('merge2')
 const mkdirp = require('mkdirp')
 const rimraf = require('rimraf')
+const tail = require('tail-stream')
 const config = require('../../config')
 const _db = require('../../lib/db')
 const gh = require('../../lib/github-api')
@@ -146,13 +147,14 @@ class Repo extends Document {
 
     const scriptPath = path.join(this.dir, '.hubbard/scripts', s)
     const logfilePath = path.join(this.dir, '.hubbard/logs', `${s}.log`)
+    await fs.open(path.join(this.dir, '.hubbard/logs/process.log'), 'w')
 
     await fs.writeFile(scriptPath, this[`${s}_script`])
     await fs.chmod(scriptPath, 500)
 
     const proc = spawn(scriptPath, { cwd: this.dir, encoding: 'utf8', env: process.env })
 
-    const logStream = mergeStream(proc.stdout, proc.stderr)
+    const logStream = mergeStreams([proc.stdout, proc.stderr])
     const logfileStream = fs.createWriteStream(logfilePath, 'utf8')
     logStream.pipe(logfileStream)
 
@@ -168,6 +170,23 @@ class Repo extends Document {
 
   get dir() {
     return path.join(__dirname, '../../.repos', this.name)
+  }
+
+  get log() {
+    const startLog = path.join(this.dir, '.hubbard/logs/start.log')
+    const processLog = path.join(this.dir, '.hubbard/logs/process.log')
+    const streams = []
+
+    try {
+      fs.statSync(startLog)
+      streams.push(fs.createReadStream(startLog))
+    } catch (e) {} // eslint-disable-line no-empty
+    try {
+      fs.statSync(processLog)
+      streams.push(tail.createReadStream(processLog, { endOnError: true, detectTruncate: false }))
+    } catch (e) {} // eslint-disable-line no-empty
+
+    return mergeStreams(...streams)
   }
 
   static async sync() {

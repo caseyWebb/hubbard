@@ -24,7 +24,7 @@
     "localtunnel": "^1.8.1",
     "sass-loader": "^4.0.2",
     "style-loader": "^0.13.1",
-    "webpack": "^1.13.3"
+    "webpack": "^2.1.0-beta.24"
   },
   "dependencies": {
     "axios": "^0.15.2",
@@ -44,10 +44,12 @@
     "koa-static": "^3.0.0",
     "lodash": "^4.16.6",
     "merge-stream": "^1.0.0",
+    "merge2": "^1.0.2",
     "mkdirp": "caseyWebb/node-mkdirp#v0.5.1.1",
     "nedb": "^1.8.0",
     "node-sass": "^3.10.1",
     "rimraf": "caseyWebb/rimraf#v2.5.4.1",
+    "tail-stream": "^0.2.1",
     "winston": "^2.3.0"
   }
 }
