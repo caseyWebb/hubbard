@@ -12,7 +12,6 @@ const rimraf = require('rimraf')
 const config = require('../../config')
 const _db = require('../../lib/db')
 const gh = require('../../lib/github-api')
-const { scriptIsNoop } = require('../../lib/utils')
 
 let _compactionQueued
 
