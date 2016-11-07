@@ -16,6 +16,8 @@
     {{/if}}
     {{#if repo.enabled}}
       &nbsp;
+      <i class="fa fa-list clickable text-muted" data-bind="click: showLog.bind(null, true)"></i>
+      &nbsp;
       <i class="fa fa-wrench clickable text-muted" data-bind="click: showSettings.bind(null, true)"></i>
     {{/if}}
   </div>
@@ -23,7 +25,10 @@
     <switch class="pull-right" params="checked: repo.enabled" style="margin-top: 5px;"></switch>
   </div>
 
-  {{#if repo.enabled}}
+  {{#if showSettings}}
     <repo-settings-modal params="repo: repo, visible: showSettings"></repo-settings-modal>
+  {{/if}}
+  {{#if showLog}}
+    <repo-log-modal params="repo: repo, visible: showLog"></repo-log-modal>
   {{/if}}
 </li>

@@ -20,16 +20,9 @@ require('./components/loader')
 require('./components/login')
 require('./components/repo-list')
 require('./components/repo-list-item')
+require('./components/repo-log-modal')
 require('./components/repo-settings-modal')
 require('./components/switch')
 require('./components/sync-button')
 
 $(() => ko.applyBindings())
-
-const log = new EventSource('/api/repos/hubbard/log')
-
-
-log.addEventListener('log_data', ({ data }) => {
-  // debugger
-  console.log(JSON.parse(data).output)
-})

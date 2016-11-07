@@ -98,9 +98,7 @@ class Repo extends Document {
     }
 
     if (this.enabled) {
-      info('Deploying', this.name)
       await this.deploy()
-      info('Deployed', this.name)
     } else {
       await this.cleanup()
     }
@@ -116,6 +114,7 @@ class Repo extends Document {
   }
 
   async deploy() {
+    info('Deploying', this.name)
     await this.ensureGitRepo()
     await this.stop()
     await this.fetchLatest()
@@ -177,9 +176,9 @@ class Repo extends Document {
       env: extend({ LOG: processLogPath }, process.env)
     })
 
-    const logStream = mergeStreams([proc.stdout, proc.stderr])
     const logfileStream = fs.createWriteStream(scriptLogPath, 'utf8')
-    logStream.pipe(logfileStream)
+    proc.stdout.pipe(logfileStream)
+    proc.stdout.pipe(logfileStream)
 
     await new Promise((resolve, reject) =>
       proc.on('close', (code) => {

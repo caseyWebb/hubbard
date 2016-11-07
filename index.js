@@ -46,8 +46,6 @@ async function start() {
 
   app.keys = [config.secret]
 
-  console.log(process.env)
-
   if (!config.github_access_token) {
     error(`
       No GitHub Access Token Supplied:

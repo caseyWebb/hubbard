@@ -15,17 +15,12 @@ class RepoSettingModal {
 
     requestAnimationFrame(() => {
       this.$modal = $(`#${this.guid}`)
-
-      this.sub = visible.subscribe((v) =>
-          this.$modal.modal(v
-            ? 'show'
-            : 'hide'))
-
+      this.$modal.modal('show')
       this.$modal.on('hidden.bs.modal', () => {
-        visible(false)
         if (!this.repo.start_script.valid()) {
           this.repo.enabled(false)
         }
+        visible(false)
       })
     })
   }
@@ -41,11 +36,6 @@ class RepoSettingModal {
           this.$modal.modal('hide')
         })
     }
-  }
-
-  dispose() {
-    this.sub.dispose()
-    this.$modal.off('hidden.bs.modal')
   }
 }
 

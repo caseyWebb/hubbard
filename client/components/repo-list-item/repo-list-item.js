@@ -7,6 +7,7 @@ class RepoListItem {
     this.repo = repo
     this.cloning = ko.observable(false)
     this.showSettings = ko.observable(false)
+    this.showLog = ko.observable(false)
 
     this.sub = this.repo.enabled.subscribe((v) => {
       if (!v || this.repo.start_script.valid()) {
