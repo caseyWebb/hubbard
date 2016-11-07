@@ -18,7 +18,7 @@ async function start() {
     config = require('./config')
   } catch (e) {
     verbose('No config.js found, creating...')
-    await fs.writeFile(path.join(__dirname, 'config.js'), 'use strict\n\nmodule.exports = {}')
+    await fs.writeFile(path.join(__dirname, 'config.js'), '\'use strict\'\n\nmodule.exports = {}')
     config = require('./config')
   }
 
