@@ -5,7 +5,7 @@ const path = require('path')
 const Koa = require('koa')
 const _ = require('lodash')
 const mkdirp = require('mkdirp')
-let logger; const { info, verbose } = logger = require('winston')
+let logger; const { error, info, verbose } = logger = require('winston')
 
 const app = new Koa()
 let config = {}
@@ -41,8 +41,10 @@ _(config)
 
 app.keys = [config.secret]
 
+console.log(process.env)
+
 if (!config.github_access_token) {
-  console.error(`
+  error(`
     No GitHub Access Token Supplied:
       Please generate a token at https://github.com/settings/tokens with
       repo and admin:repo_hook permissions, and supply that token in config.js

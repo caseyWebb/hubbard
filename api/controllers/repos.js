@@ -30,16 +30,16 @@ module.exports = router({ prefix: '/repos' })
 
     ctx.body = repo.log.pipe(new SSEStream('log_data'))
 
-    return new Promise((resolve) => {
+    // return new Promise((resolve) => {
       ctx.req.on('close', close)
       ctx.req.on('finish', close)
       ctx.req.on('error', close)
-      
+
       function close() {
         ctx.res.end()
-        resolve()
+        // resolve()
       }
-    })
+    // })
   })
 
   .routes()
