@@ -1,5 +1,6 @@
 'use strict'
 
+const $ = require('jquery')
 const ko = window.ko = require('knockout')
 
 ko.options.deferUpdates = true
@@ -24,3 +25,11 @@ require('./components/switch')
 require('./components/sync-button')
 
 $(() => ko.applyBindings())
+
+const log = new EventSource('/api/repos/hubbard/log')
+
+
+log.addEventListener('log_data', ({ data }) => {
+  // debugger
+  console.log(JSON.parse(data).output)
+})

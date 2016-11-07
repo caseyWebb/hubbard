@@ -16,12 +16,13 @@ class RepoSettingModal {
     requestAnimationFrame(() => {
       this.$modal = $(`#${this.guid}`)
 
-      this.sub = ko.computed(() =>
-          this.$modal.modal(visible()
+      this.sub = visible.subscribe((v) =>
+          this.$modal.modal(v
             ? 'show'
             : 'hide'))
 
       this.$modal.on('hidden.bs.modal', () => {
+        visible(false)
         if (!this.repo.start_script.valid()) {
           this.repo.enabled(false)
         }

@@ -7,7 +7,7 @@
     "start": "forever start -c \"node --harmony\" index.js",
     "stop": "forever stop -c \"node --harmony\" index.js",
     "lint": "eslint ./**/*.js",
-    "build": "rm -r public/dist && webpack"
+    "build": "rm -rf public/dist && webpack"
   },
   "keywords": [],
   "author": "Casey Webb <notcaseywebb@gmail.com> (https://caseyWebb.github.io)",

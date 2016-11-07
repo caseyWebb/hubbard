@@ -5,6 +5,7 @@ const Repos = require('../models/repo')
 
 module.exports = router({ prefix: '/webhook' })
   .post('/', async (ctx) => {
+    console.log(ctx.request.body)
     const repo = await Repos.findOne({ _id: ctx.request.body.id })
     await repo.deploy()
     ctx.status = 200

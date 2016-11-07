@@ -1,6 +1,6 @@
 'use strict'
 
-const { extend } = require('lodash')
+const { extend, noop } = require('lodash')
 const router = require('koa-router')
 const authenticate = require('../middleware/authenticate')
 const Repos = require('../models/repo')
@@ -23,12 +23,23 @@ module.exports = router({ prefix: '/repos' })
 
   .get('/:name/log', authenticate, async (ctx) => {
     const repo = await Repos.findOne({ name: ctx.params.name })
+    ctx.socket.setTimeout(Number.MAX_VALUE)
+    ctx.type = 'text/event-stream'
+    ctx.set('Cache-Control', 'no-cache')
+    ctx.set('Connection', 'keep-alive')
 
-    this.body = repo.log.pipe(new SSEStream('log_data'))
+    ctx.body = repo.log.pipe(new SSEStream('log_data'))
 
-    ctx.req.on('close', () => ctx.res.end())
-    ctx.req.on('finish', () => ctx.res.end())
-    ctx.req.on('error', () => ctx.res.end())
+    return new Promise((resolve) => {
+      ctx.req.on('close', close)
+      ctx.req.on('finish', close)
+      ctx.req.on('error', close)
+      
+      function close() {
+        ctx.res.end()
+        resolve()
+      }
+    })
   })
 
   .routes()

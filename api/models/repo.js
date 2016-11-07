@@ -9,6 +9,7 @@ const mergeStreams = require('merge2')
 const mkdirp = require('mkdirp')
 const rimraf = require('rimraf')
 const tail = require('tail-stream')
+const { error, info, verbose } = require('winston')
 const config = require('../../config')
 const _db = require('../../lib/db')
 const gh = require('../../lib/github-api')
@@ -60,9 +61,11 @@ class Repo extends Document {
       }
 
       try {
+        info('Saving webhook for', this.name)
         await gh
           .patch(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`, hook)
       } catch (e) {
+        info('Save failed... Creating new webhook')
         await gh
           .post(`/repos/${this.owner}/${this.name}/hooks`, hook)
           .then(({ data: { id } }) => {
@@ -76,11 +79,12 @@ class Repo extends Document {
 
   async postSave() {
     if (!this.enabled && this.webhook_id) {
+      info('Deleting webhook for', this.name)
       await gh
         .delete(`/repos/${this.owner}/${this.name}/hooks/${this.webhook_id}`)
         .catch((err) => {
           if (!err.response.status === 404) {
-            console.error('Failed to delete webhook')
+            error('Failed to delete webhook for', this.name)
             throw new Error('Failed to delete webhook')
           }
         })
@@ -94,15 +98,21 @@ class Repo extends Document {
     }
 
     if (this.enabled) {
+      info('Deploying', this.name)
       await this.deploy()
+      info('Deployed', this.name)
     } else {
       await this.cleanup()
     }
   }
 
   async cleanup() {
-    await this.stop()
-    await rimraf(this.dir)
+    try {
+      fs.statSync(this.dir)
+      verbose('Cleaning up', this.name)
+      await this.stop()
+      await rimraf(this.dir)
+    } catch (e) {} // eslint-disable-line no-empty
   }
 
   async deploy() {
@@ -113,6 +123,7 @@ class Repo extends Document {
   }
 
   async ensureGitRepo() {
+    verbose('Ensuring git repo')
     await mkdirp(this.dir)
     await new Promise((resolve, reject) =>
       exec('git init', { cwd: this.dir }, (err) => err ? reject(err) : resolve()))
@@ -122,47 +133,61 @@ class Repo extends Document {
     const encoding = 'utf8'
     const repoUrl = `https://${config.github_access_token}:x-oauth-basic@github.com/${this.owner}/${this.name}.git`
 
-    console.log('Fetching latest for', this.name)
+    verbose('Fetching latest for', this.name)
 
     await new Promise((resolve, reject) =>
       exec(`git fetch ${repoUrl}`, { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
     await new Promise((resolve, reject) =>
       exec('git checkout FETCH_HEAD', { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
 
-    console.log('Latest fetched for', this.name)
+    verbose('Latest fetched for', this.name)
   }
 
   async start() {
+    verbose('Starting', this.name)
     await this.runScript('start')
   }
 
   async stop() {
+    verbose('Stopping', this.name)
     await this.runScript('stop')
+    verbose('Deleting .hubbard subdirectory')
     await rimraf(path.join(this.dir, '.hubbard'))
   }
 
   async runScript(s) {
+    verbose(`Creating ${this.dir}/.hubbard/scripts`)
     await mkdirp(path.join(this.dir, '.hubbard/scripts'))
+    verbose(`Creating ${this.dir}/.hubbard/logs`)
     await mkdirp(path.join(this.dir, '.hubbard/logs'))
 
     const scriptPath = path.join(this.dir, '.hubbard/scripts', s)
-    const logfilePath = path.join(this.dir, '.hubbard/logs', `${s}.log`)
-    await fs.open(path.join(this.dir, '.hubbard/logs/process.log'), 'w')
+    const scriptLogPath = path.join(this.dir, '.hubbard/logs', `${s}.log`)
+    const processLogPath = path.join(this.dir, '.hubbard/logs/process.log')
+    await fs.open(processLogPath, 'w')
 
+    verbose('Writing script', scriptPath)
     await fs.writeFile(scriptPath, this[`${s}_script`])
     await fs.chmod(scriptPath, 500)
 
-    const proc = spawn(scriptPath, { cwd: this.dir, encoding: 'utf8', env: process.env })
+    verbose('Spawning script:', scriptPath)
+    const proc = spawn(scriptPath, {
+      cwd: this.dir,
+      encoding: 'utf8',
+      env: extend({ LOG: processLogPath }, process.env)
+    })
 
     const logStream = mergeStreams([proc.stdout, proc.stderr])
-    const logfileStream = fs.createWriteStream(logfilePath, 'utf8')
+    const logfileStream = fs.createWriteStream(scriptLogPath, 'utf8')
     logStream.pipe(logfileStream)
 
     await new Promise((resolve, reject) =>
       proc.on('close', (code) => {
         if (code !== 0) {
+          error(this.name, `Script exited with non-zero exit code ${code}`)
           reject(`Script exited with non-zero exit code ${code}`)
         } else {
+          verbose('Script exited with zero exit code')
           resolve()
         }
       }))
@@ -190,7 +215,7 @@ class Repo extends Document {
   }
 
   static async sync() {
-    console.log('Syncing repositories...')
+    info('Syncing repositories')
 
     const { data: _repos } = await gh.get('/user/repos')
     const repos = await _(_repos)
@@ -211,7 +236,7 @@ class Repo extends Document {
       })
       .value()
 
-    console.log('Finished syncing repositories')
+    info('Finished syncing repositories')
 
     Repo.queueCompaction()
 
@@ -228,8 +253,11 @@ class Repo extends Document {
 
   static async compactDataFile() {
     const db = await _db
+
+    verbose('Compacting datafile')
     if (db._collections.repos) {
       db._collections.repos.persistence.compactDatafile()
+      verbose('Datafile compacted')
     }
   }
 }

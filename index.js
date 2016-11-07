@@ -5,9 +5,17 @@ const path = require('path')
 const Koa = require('koa')
 const _ = require('lodash')
 const mkdirp = require('mkdirp')
-const config = require('./config')
+let logger; const { info, verbose } = logger = require('winston')
 
 const app = new Koa()
+let config = {}
+
+try {
+  config = require('./config')
+} catch (e) {
+  verbose('No config.js found')
+  config = {}
+}
 
 _(config)
   .defaults({
@@ -16,7 +24,8 @@ _(config)
     port: 8080,
     host: '0.0.0.0',
     use_https: false,
-    secret: 'not a good secret'
+    secret: 'not a good secret',
+    log_level: 'info'
   })
   .extendWith({
     environment: process.env.NODE_ENV,
@@ -25,7 +34,8 @@ _(config)
     host: process.env.HUBBARD_HOST,
     use_https: process.env.HUBBARD_USE_HTTPS,
     secret: process.env.HUBBARD_SECRET,
-    github_access_token: process.env.HUBBARD_GITHUB_ACCESS_TOKEN
+    github_access_token: process.env.HUBBARD_GITHUB_ACCESS_TOKEN,
+    log_level: process.env.HUBBARD_LOG_LEVEL
   }, (c, env) => env || c)
   .value()
 
@@ -42,12 +52,15 @@ if (!config.github_access_token) {
   throw new Error('Missing GitHub Access Token')
 }
 
+logger.level = config.log_level
+logger.remove(logger.transports.Console)
+logger.add(logger.transports.Console, { colorize: true })
+
 start()
 
 async function start() {
   const host = config.host
   const port = config.port
-
 
   if (config.environment === 'development') {
     app.use(require('./lib/webpack-dev-middleware'))
@@ -55,6 +68,7 @@ async function start() {
     config.port = 80
   }
 
+  verbose('Ensuring .repos directory')
   await mkdirp(path.join(__dirname, '.repos'))
 
   app.use(require('./api'))
@@ -62,14 +76,17 @@ async function start() {
 
   const server = http.createServer(app.callback())
 
+  verbose('Connecting to nedb')
   await require('./lib/db')
+
   await require('./api/models/repo').sync()
 
+  verbose('Starting Hubbard server')
   server.listen(port, host, (err) => {
     if (err) {
       throw new Error(err)
     } else {
-      console.log(`Hubbard listening on ${config.host}:${config.port}`)
+      info(`Hubbard listening on ${config.host}:${config.port}`)
     }
   })
 }
