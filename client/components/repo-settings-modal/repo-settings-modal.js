@@ -2,6 +2,7 @@
 
 const $ = require('jquery')
 const ko = require('knockout')
+const error = require('../../../lib/errors')
 
 class RepoSettingModal {
   constructor({ repo, visible }) {
@@ -30,11 +31,10 @@ class RepoSettingModal {
       this.showErrors(true)
       e.preventDefault()
     } else {
+      this.$modal.modal('hide')
       this.repo
         .save()
-        .then(() => {
-          this.$modal.modal('hide')
-        })
+        .catch((err) => error(err))
     }
   }
 }

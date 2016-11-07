@@ -1,14 +1,16 @@
 'use strict'
 
 const path = require('path')
+const { Readable } = require('stream')
 const { exec, spawn } = require('child_process')
-let _; const { extend } = _ = require('lodash')
+let _; const { extend, noop } = _ = require('lodash')
 const { Document, getClient } = require('camo')
 const fs = require('fs-promise')
 const mergeStreams = require('merge2')
 const mkdirp = require('mkdirp')
 const rimraf = require('rimraf')
-const tail = require('tail-stream')
+// const tail = require('tail-stream')
+const Tail = require('always-tail')
 const { error, info, verbose } = require('winston')
 const config = require('../../config')
 const _db = require('../../lib/db')
@@ -119,6 +121,7 @@ class Repo extends Document {
     await this.stop()
     await this.fetchLatest()
     await this.start()
+    info('Deployed', this.name)
   }
 
   async ensureGitRepo() {
@@ -137,7 +140,7 @@ class Repo extends Document {
     await new Promise((resolve, reject) =>
       exec(`git fetch ${repoUrl}`, { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
     await new Promise((resolve, reject) =>
-      exec('git checkout FETCH_HEAD', { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
+      exec('git checkout -f FETCH_HEAD', { cwd: this.dir, encoding }, (err) => err ? reject(err) : resolve()))
 
     verbose('Latest fetched for', this.name)
   }
@@ -157,13 +160,9 @@ class Repo extends Document {
   async runScript(s) {
     verbose(`Creating ${this.dir}/.hubbard/scripts`)
     await mkdirp(path.join(this.dir, '.hubbard/scripts'))
-    verbose(`Creating ${this.dir}/.hubbard/logs`)
-    await mkdirp(path.join(this.dir, '.hubbard/logs'))
 
     const scriptPath = path.join(this.dir, '.hubbard/scripts', s)
-    const scriptLogPath = path.join(this.dir, '.hubbard/logs', `${s}.log`)
-    const processLogPath = path.join(this.dir, '.hubbard/logs/process.log')
-    await fs.open(processLogPath, 'w')
+    const logPath = path.join(this.dir, '.hubbard/log')
 
     verbose('Writing script', scriptPath)
     await fs.writeFile(scriptPath, this[`${s}_script`])
@@ -173,11 +172,10 @@ class Repo extends Document {
     const proc = spawn(scriptPath, {
       cwd: this.dir,
       encoding: 'utf8',
-      env: extend({ LOG: processLogPath }, process.env)
+      env: extend({ LOG: logPath }, process.env)
     })
 
-    const logfileStream = fs.createWriteStream(scriptLogPath, 'utf8')
-    proc.stdout.pipe(logfileStream)
+    const logfileStream = fs.createWriteStream(logPath, 'utf8')
     proc.stdout.pipe(logfileStream)
 
     await new Promise((resolve, reject) =>
@@ -197,20 +195,14 @@ class Repo extends Document {
   }
 
   get log() {
-    const startLog = path.join(this.dir, '.hubbard/logs/start.log')
-    const processLog = path.join(this.dir, '.hubbard/logs/process.log')
-    const streams = []
+    const logDir = path.join(this.dir, '.hubbard')
+    mkdirp.sync(logDir)
 
-    try {
-      fs.statSync(startLog)
-      streams.push(fs.createReadStream(startLog))
-    } catch (e) {} // eslint-disable-line no-empty
-    try {
-      fs.statSync(processLog)
-      streams.push(tail.createReadStream(processLog, { endOnError: true, detectTruncate: false }))
-    } catch (e) {} // eslint-disable-line no-empty
+    const logTail = new Tail(path.join(logDir, 'log'), '\n', { start: 0 })
+    const log = new Readable({ read: noop })
+    logTail.on('line', (line) => log.push(line + '\n'))
 
-    return mergeStreams(...streams)
+    return log
   }
 
   static async sync() {

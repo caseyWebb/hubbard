@@ -1,5 +1,6 @@
 'use strict'
 
+const { invokeMap } = require('lodash')
 const ko = require('knockout')
 
 class RepoListItem {
@@ -9,15 +10,29 @@ class RepoListItem {
     this.showSettings = ko.observable(false)
     this.showLog = ko.observable(false)
 
-    this.sub = this.repo.enabled.subscribe((v) => {
-      if (!v || this.repo.start_script.valid()) {
-        this.repo.save()
-      }
-    })
+    this.subs = [
+      this.repo.enabled.subscribe((v) => {
+        if (v) {
+          if (this.repo.start_script.valid()) {
+            this.showLog(true)
+          } else {
+            this.showSettings(true)
+          }
+        }
+        if (!v || this.repo.start_script.valid()) {
+          this.repo.save()
+        }
+      }),
+      this.showSettings.subscribe((v) => {
+        if (!v && this.repo.enabled()) {
+          this.showLog(true)
+        }
+      })
+    ]
   }
 
   dispose() {
-    this.sub.dispose()
+    invokeMap(this.subs, 'dispose')
   }
 }
 

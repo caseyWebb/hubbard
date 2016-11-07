@@ -2,14 +2,18 @@
 
 const $ = require('jquery')
 const ko = require('knockout')
+const ansi = require('ansi_up')
 
 class RepoLogModal {
   constructor({ repo, visible }) {
     this.es = new EventSource(`/api/repos/${repo.name()}/log`)
     this.log = ko.observable('')
 
-    this.es.addEventListener('log_data', ({ data }) =>
-      this.log(this.log() + JSON.parse(data).output))
+    this.es.addEventListener('log_data', ({ data }) => {
+      this.log(this.log() + ansi.ansi_to_html(JSON.parse(data).output))
+      const el = document.getElementById('log-output')
+      el.scrollTop = el.scrollHeight
+    })
 
     this.repo = repo
     this.guid = `repo-log-modal-${this.repo.owner()}-${this.repo.name().replace(/\./g, '-')}`
