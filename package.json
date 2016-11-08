@@ -4,7 +4,7 @@
   "description": "Über Simple GitHub Deployments",
   "main": "index.js",
   "scripts": {
-    "start": "forever -c \"node --harmony\" index.js",
+    "start": "node --harmony index.js",
     "lint": "eslint ./**/*.js",
     "build": "rm -rf public/dist && webpack -p"
   },
