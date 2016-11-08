@@ -13,17 +13,17 @@ GitHub Deployments, Simplified.
 
 Hubbard is essentially a glorified git post-checkout hook with GitHub mojo. That's it.
 
-#### Screenshots
+## Screenshots
 ![](http://i.imgur.com/aSUnWcC.png)
 ![](http://i.imgur.com/WDnFjdK.png)
 ![](http://i.imgur.com/yxcoY5T.png)
 
-#### Installing
+## Installing
 - Clone the repo
 - Create config.js (Optionally, see [configuration](#configuration))
 - Start Hubbard (`npm start`)
 
-#### Configuration
+## Configuration
 The only options that are __required__ are a valid [GitHub access token](https://github.com/settings/tokens)
 with `repo` and `admin:repo_hook` scopes, and a publicly-accesible hostname. In
 development, a hostname will be generated with [localtunnel](https://github.com/localtunnel/localtunnel).
@@ -58,5 +58,5 @@ __NOTE__: You shouldn't put your GitHub access token in config.js, nor any other
 sensitive values in your repos' scripts, to avoid exposing them in plain-text
 on disk. Any environment variables accessible to Hubbard will be accessible in your scripts.
 
-#### I NEED MOAR
+## I NEED MOAR
 [Read the wiki](https://github.com/caseyWebb/hubbard/wiki)
