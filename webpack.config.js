@@ -14,6 +14,16 @@ module.exports = {
   module: {
     loaders: [
       {
+        test: /\.js$/,
+        exclude: /(node_modules)/,
+        loader: 'babel',
+        query: {
+          cacheDirectory: true,
+          presets: ['es2015']
+        }
+      },
+
+      {
         test: /\.html$/,
         loader: 'html'
       },
@@ -47,6 +57,6 @@ module.exports = {
   devtool: 'source-map',
 
   plugins: [
-    new CompressionPlugin(),
+    new CompressionPlugin()
   ]
 }

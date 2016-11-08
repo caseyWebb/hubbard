@@ -8,7 +8,7 @@ const guid = require('../../../lib/guid')('editor')
 
 class Editor {
   constructor({ value }) {
-    this.guid = guid.next().value
+    this.guid = guid()
 
     requestAnimationFrame(() => {
       this.editor = ace.edit(this.guid)

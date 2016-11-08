@@ -4,7 +4,7 @@ const guid = require('../../../lib/guid')('switch')
 
 class Switch {
   constructor({ checked }) {
-    this.guid = guid.next().value
+    this.guid = guid()
     this.checked = checked
   }
 }
