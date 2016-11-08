@@ -4,10 +4,9 @@
   "description": "Über Simple GitHub Deployments",
   "main": "index.js",
   "scripts": {
-    "start": "forever start -c \"node --harmony\" index.js",
-    "stop": "forever stop -c \"node --harmony\" index.js",
+    "start": "forever -c \"node --harmony\" index.js",
     "lint": "eslint ./**/*.js",
-    "build": "rm -rf public/dist && webpack"
+    "build": "rm -rf public/dist && webpack -p"
   },
   "keywords": [],
   "author": "Casey Webb <notcaseywebb@gmail.com> (https://caseyWebb.github.io)",
