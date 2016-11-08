@@ -14,9 +14,9 @@ GitHub Deployments, Simplified.
 Hubbard is essentially a glorified git post-checkout hook with GitHub mojo. That's it.
 
 #### Screenshots
-![](https://www.dropbox.com/s/v0lr6f21ocq0rur/Screenshot%202016-11-07%2018.19.07.png?dl=0)
-![](https://www.dropbox.com/s/77fqaj07w6i2g1o/Screenshot%202016-11-07%2018.19.24.png?dl=0)
-![](https://www.dropbox.com/s/3amg7xzbuese4x4/Screenshot%202016-11-07%2018.19.40.png?dl=0)
+![](http://imgur.com/a/BNCwR)
+![](http://imgur.com/a/CQda3)
+![](http://imgur.com/a/is0fV)
 
 #### Installing
 - Clone the repo
@@ -31,7 +31,7 @@ development, a hostname will be generated with [localtunnel](https://github.com/
 Setting a password and secret are also __HIGHLY__ recommended, but it will work
 without them.
 
-Other options should be self explanatory and can be provided via config.js or environment variables
+Other options should be self explanatory and can be provided via config.js or environment variables.
 
 __config.js__
 ```javascript
@@ -46,12 +46,17 @@ module.exports = {              // Environment Variable Names
   use_https: false,             // HUBBARD_USE_HTTPS
   secret: 'not a good secret',  // HUBBARD_SECRET
   log_level: 'info'             // HUBBARD_LOG_LEVEL
-  
+
 }
 ```
-
-or environment variables...
 
 ```bash
 $ HUBBARD_GITHUB_ACCESS_TOKEN=<token> npm start
 ```
+
+__NOTE__: You shouldn't put your GitHub access token in config.js, nor any other
+sensitive values in your repos' scripts, to avoid exposing them in plain-text
+on disk. Any environment variables accessible to Hubbard will be accessible in your scripts.
+
+#### I NEED MOAR
+[Read the wiki](https://github.com/caseyWebb/hubbard/wiki)
