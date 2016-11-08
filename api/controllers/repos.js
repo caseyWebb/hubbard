@@ -1,6 +1,6 @@
 'use strict'
 
-const { extend, noop } = require('lodash')
+const { extend } = require('lodash')
 const router = require('koa-router')
 const authenticate = require('../middleware/authenticate')
 const Repos = require('../models/repo')
@@ -30,16 +30,13 @@ module.exports = router({ prefix: '/repos' })
 
     ctx.body = repo.log.pipe(new SSEStream('log_data'))
 
-    // return new Promise((resolve) => {
-      ctx.req.on('close', close)
-      ctx.req.on('finish', close)
-      ctx.req.on('error', close)
+    ctx.req.on('close', close)
+    ctx.req.on('finish', close)
+    ctx.req.on('error', close)
 
-      function close() {
-        ctx.res.end()
-        // resolve()
-      }
-    // })
+    function close() {
+      ctx.res.end()
+    }
   })
 
   .routes()
