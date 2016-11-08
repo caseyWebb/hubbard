@@ -1,8 +1,15 @@
 'use strict'
 
 module.exports = {
-  // environment: 'production',
+  environment: 'development',
+  password: '',
   port: 8080,
-  github_access_token: '83b13ed49b5fef87f796dcc543b69db4f9ce4cbf',
-  log_level: 'verbose'
+  host: '0.0.0.0',
+  use_https: false,
+  log_level: 'info',
+  log_file: null,
+  log_format: 'text',
+  pid_file: null,
+  repos_dir: '.repos',
+  data_dir: '.data'
 }

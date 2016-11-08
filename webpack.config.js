@@ -1,28 +1,32 @@
 'use strict'
 
+const webpack = require('webpack')
 const CompressionPlugin = require('compression-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
-module.exports = {
+let environment = process.env.NODE_ENV
+if (!environment) {
+  let c
+  try {
+    c = require('./config')
+  } catch(e) {
+    c = {}
+  }
+  environment = c.environment || 'production'
+  process.env.NODE_ENV = environment
+}
+
+const config = {
   entry: './client/index.js',
 
   output: {
-    path: 'public/dist',
-    filename: 'bundle.js',
-    publicPath: '/dist/'
+    path: './.dist',
+    filename: 'app.js',
+    publicPath: '/'
   },
 
   module: {
     loaders: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules)/,
-        loader: 'babel',
-        query: {
-          cacheDirectory: true,
-          presets: ['es2015']
-        }
-      },
-
       {
         test: /\.html$/,
         loader: 'html'
@@ -54,9 +58,33 @@ module.exports = {
     'jquery': 'jQuery'
   },
 
-  devtool: 'source-map',
-
   plugins: [
-    new CompressionPlugin()
+    new HtmlWebpackPlugin({
+      template: 'client/index.ejs',
+      hash: true
+    })
   ]
 }
+
+if (environment !== 'development') {
+  config.module.loaders.push({
+    test: /\.js$/,
+    exclude: /(node_modules)/,
+    loader: 'babel',
+    query: {
+      cacheDirectory: true,
+      presets: ['es2015']
+    }
+  })
+}
+
+if (environment === 'development') {
+  config.devtool = 'source-map'
+}
+
+if (environment === 'production') {
+  config.plugins.push(new CompressionPlugin())
+  config.plugins.push(new webpack.optimize.UglifyJsPlugin())
+}
+
+module.exports = config

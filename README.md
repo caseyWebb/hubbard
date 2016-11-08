@@ -28,8 +28,7 @@ The only options that are __required__ are a valid [GitHub access token](https:/
 with `repo` and `admin:repo_hook` scopes, and a publicly-accesible hostname. In
 development, a hostname will be generated with [localtunnel](https://github.com/localtunnel/localtunnel).
 
-Setting a password and secret are also __HIGHLY__ recommended, but it will work
-without them.
+Setting a password is also __HIGHLY__ recommended, but it will work without one.
 
 Other options should be self explanatory and can be provided via config.js or environment variables.
 
@@ -44,7 +43,6 @@ module.exports = {              // Environment Variable Names
   port: 8080,                   // HUBBARD_PORT
   host: '0.0.0.0',              // HUBBARD_HOST
   use_https: false,             // HUBBARD_USE_HTTPS
-  secret: 'not a good secret',  // HUBBARD_SECRET
   log_level: 'info'             // HUBBARD_LOG_LEVEL
 
 }

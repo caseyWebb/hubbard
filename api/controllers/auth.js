@@ -8,6 +8,7 @@ module.exports = router({ prefix: '/auth' })
     if (ctx.request.body.password === config.password) {
       ctx.cookies.set('authenticated', true, { signed: true, httpOnly: false })
       ctx.status = 200
+      ctx.body = 'Login Successful'
     } else {
       ctx.status = 401
       ctx.body = 'Incorrect Password'
