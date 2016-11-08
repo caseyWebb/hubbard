@@ -14,9 +14,9 @@ GitHub Deployments, Simplified.
 Hubbard is essentially a glorified git post-checkout hook with GitHub mojo. That's it.
 
 #### Screenshots
-![](http://imgur.com/a/BNCwR)
-![](http://imgur.com/a/CQda3)
-![](http://imgur.com/a/is0fV)
+![](http://i.imgur.com/aSUnWcC.png)
+![](http://i.imgur.com/WDnFjdK.png)
+![](http://i.imgur.com/yxcoY5T.png)
 
 #### Installing
 - Clone the repo
