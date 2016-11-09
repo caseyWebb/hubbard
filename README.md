@@ -24,7 +24,7 @@ Hubbard is essentially a glorified git post-checkout hook with GitHub mojo. That
 $ npm install -g hubbard
 $ hubbard --help
 
-  Usage: cli [command]
+  Usage: hubbard [command]
 
 
   Commands:
