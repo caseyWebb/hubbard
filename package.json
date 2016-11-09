@@ -1,6 +1,6 @@
 {
   "name": "hubbard",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Über Simple GitHub Deployments",
   "bin": "./cli.js",
   "scripts": {
