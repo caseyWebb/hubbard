@@ -12,8 +12,6 @@ const rimraf = require('rimraf')
 const randomstring = require('randomstring')
 let logger; const { error, info, verbose } = logger = require('winston')
 
-// const config = require('./lib/config')
-
 start()
   .then(() =>
     info(`Hubbard listening on ${program.host}:${program.port}`))

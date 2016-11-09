@@ -1,7 +1,11 @@
+.git
 .data
 .repos
-client
+.log
+.pid
 config.js
 
 node_modules
 npm-debug.log
+
+.DS_Store
