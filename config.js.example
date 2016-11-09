@@ -5,11 +5,11 @@ module.exports = {
   password: '',
   port: 8080,
   host: '0.0.0.0',
-  use_https: false,
-  log_level: 'info',
-  log_file: null,
-  log_format: 'text',
-  pid_file: null,
-  repos_dir: '.repos',
-  data_dir: '.data'
+  useHttps: false,
+  logLevel: 'info',
+  logFile: null,
+  logFormat: 'text',
+  pidFile: null,
+  reposDir: '.repos',
+  dataDir: '.data'
 }
