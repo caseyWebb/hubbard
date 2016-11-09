@@ -9,8 +9,8 @@ const fs = require('fs-promise')
 const mkdirp = require('mkdirp')
 const rimraf = require('rimraf')
 const Tail = require('always-tail')
+const program = require('commander')
 const { error, info, verbose } = require('winston')
-const config = require('../../config')
 const _db = require('../../lib/db')
 const gh = require('../../lib/github-api')
 
@@ -55,7 +55,7 @@ class Repo extends Document {
         active: true,
         events: ['push'],
         config: {
-          url: `http${config.use_https ? 's' : ''}://${config.host}:${config.port}/api/webhook`,
+          url: `http${program.useHttps ? 's' : ''}://${program.host}:${program.port}/api/webhook`,
           content_type: 'json'
         }
       }
@@ -131,7 +131,7 @@ class Repo extends Document {
 
   async fetchLatest() {
     const encoding = 'utf8'
-    const repoUrl = `https://${config.github_access_token}:x-oauth-basic@github.com/${this.owner}/${this.name}.git`
+    const repoUrl = `https://${program.accessToken}:x-oauth-basic@github.com/${this.owner}/${this.name}.git`
 
     verbose('Fetching latest for', this.name)
 
@@ -189,7 +189,7 @@ class Repo extends Document {
   }
 
   get dir() {
-    return path.join(__dirname, '../../.repos', this.name)
+    return path.join(program.reposDir, this.name)
   }
 
   get log() {

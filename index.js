@@ -1,9 +1,10 @@
+#!/usr/bin/env node --harmony
 'use strict'
 
 const http = require('http')
 const path = require('path')
 const Koa = require('koa')
-const _ = require('lodash')
+const { defaults, extendWith } = require('lodash')
 const program = require('commander')
 const mkdirp = require('mkdirp')
 const fs = require('fs-promise')
@@ -11,108 +12,94 @@ const rimraf = require('rimraf')
 const randomstring = require('randomstring')
 let logger; const { error, info, verbose } = logger = require('winston')
 
-let config = {}
+// const config = require('./lib/config')
 
 start()
   .then(() =>
-    info(`Hubbard listening on ${config.host}:${config.port}`))
+    info(`Hubbard listening on ${program.host}:${program.port}`))
   .catch((err) =>
     error(err))
 
 async function start() {
   const app = new Koa()
 
-  try {
-    config = require('./config')
-  } catch (e) {
-    verbose('No config.js found, creating...')
-    await fs.writeFile(path.join(__dirname, './config.js'), '\'use strict\'\n\nmodule.exports = {}')
-    config = require('./config')
+  let config
+  if (!program.config) {
+    try {
+      config = require('./config')
+    } catch (e) {
+      config = {}
+    }
   }
 
-  _(config)
-    .defaults({
+  console.log(process.env)
+
+  defaults(program, extendWith(
+    {
       environment: 'production',
       password: '',
       port: 8080,
       host: '0.0.0.0',
-      use_https: false,
-      log_level: 'info',
-      log_format: 'text',
-      pid_file: path.resolve(__dirname, '.pid'),
-      data_dir: path.resolve(__dirname, './.data'),
-      repos_dir: path.resolve(__dirname, './.repos')
-    })
-    .extendWith({
+      useHttps: false,
+      logLevel: 'info',
+      logFormat: 'text',
+      pidFile: path.resolve(__dirname, '.pid'),
+      dataDir: path.resolve(__dirname, './.data'),
+      reposDir: path.resolve(__dirname, './.repos')
+    },
+    {
       environment: process.env.NODE_ENV,
       password: process.env.HUBBARD_PASSWORD,
       port: process.env.HUBBARD_PORT,
       host: process.env.HUBBARD_HOST,
-      use_https: process.env.HUBBARD_USE_HTTPS,
-      github_access_token: process.env.HUBBARD_GITHUB_ACCESS_TOKEN,
-      log_level: process.env.HUBBARD_LOG_LEVEL,
-      log_file: process.env.HUBBARD_LOG,
-      log_format: process.env.HUBBARD_LOG_FORMAT,
-      pid_file: process.env.HUBBARD_PID,
-      data_dir: process.env.HUBBARD_DATA,
-      repos_dir: process.env.HUBBARD_REPOS
-    }, (c, env) => env || c)
-    .extendWith({
-      password: program.password,
-      port: program.port,
-      host: program.host,
-      use_https: program.useHttps,
-      github_access_token: program.accessToken,
-      log_file: program.logFile,
-      log_level: program.logLevel,
-      log_format: program.logFileFormat,
-      pid_file: program.pidFile,
-      data_dir: program.dataDir,
-      repos_dir: program.reposDir,
-    }, (c, p) => p || c)
-    .value()
+      useHttps: process.env.HUBBARD_USE_HTTPS,
+      accessToken: process.env.HUBBARD_GITHUB_ACCESS_TOKEN,
+      logLevel: process.env.HUBBARD_LOG_LEVEL,
+      logFile: process.env.HUBBARD_LOG,
+      logFormat: process.env.HUBBARD_LOG_FORMAT,
+      pidFile: process.env.HUBBARD_PID,
+      dataDir: process.env.HUBBARD_DATA,
+      reposDir: process.env.HUBBARD_REPOS,
+    },
+    process.env.__daemon ? {} : config,
+    (c, p) => p || c))
 
   app.keys = [randomstring.generate()]
 
-  if (!config.github_access_token) {
-    throw new Error(`
-      No GitHub Access Token Supplied:
-        Please generate a token at https://github.com/settings/tokens with
-        repo and admin:repo_hook permissions, and supply that token in config.js
-        as "github_access_token"
-    `)
+  if (!program.accessToken) {
+    throw new Error('No GitHub Access Token Supplied')
   }
 
-  if (config.pid_file) {
-    await fs.writeFile(config.pid_file, process.pid)
-    process.on('exit', () => rimraf.sync(config.pid_file))
+  if (program.pidFile) {
+    await fs.writeFile(program.pidFile, process.pid)
+    process.on('exit', () => rimraf.sync(program.pidFile))
   }
 
-  logger.level = config.log_level
+  logger.level = program.logLevel
   const transports = [
     new logger.transports.Console({
       colorize: true
     })
   ]
-  if (config.log_file) {
+  if (program.logFile) {
     transports.push(new (logger.transports.File)({
-      filename: config.log_file,
+      filename: program.logFile,
       colorize: true,
-      json: config.log_format === 'json'
+      json: program.logFormat === 'json'
     }))
   }
   logger.configure({ transports })
 
-  const host = config.host
-  const port = config.port
+  const host = program.host
+  const port = program.port
 
-  if (config.environment === 'development') {
-    config.host = await require('./lib/localtunnel')
-    config.port = 80
+  if (program.environment === 'development') {
+    program.host = await require('./lib/localtunnel')
+    program.port = 80
   }
 
-  verbose('Ensuring .repos directory')
-  await mkdirp(path.join(__dirname, '.repos'))
+  verbose('Ensuring repo directory')
+  await mkdirp(program.reposDir)
 
   app.use(require('./api'))
   app.use(require('koa-static')(path.resolve(__dirname, '.dist')))

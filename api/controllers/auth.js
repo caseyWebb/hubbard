@@ -1,11 +1,11 @@
 'use strict'
 
 const router = require('koa-router')
-const config = require('../../config')
+const program = require('commander')
 
 module.exports = router({ prefix: '/auth' })
   .post('/login', (ctx) => {
-    if (ctx.request.body.password === config.password) {
+    if (ctx.request.body.password === program.password) {
       ctx.cookies.set('authenticated', true, { signed: true, httpOnly: false })
       ctx.status = 200
       ctx.body = 'Login Successful'
