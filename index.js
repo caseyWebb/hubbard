@@ -32,8 +32,6 @@ async function start() {
     }
   }
 
-  console.log(process.env)
-
   defaults(program, extendWith(
     {
       environment: 'production',
