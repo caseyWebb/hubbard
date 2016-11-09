@@ -34,8 +34,9 @@ $ hubbard --help
 
   Options:
 
-    -h, --help                        output usage information
-    -V, --version                     output the version number
+    --help                            output usage information
+    --version                         output the version number
+
     -c, --config [config file]        Configuration file to use
     -h, --host [host]                 Hostname to bind server and webhooks
     -p, --port [port]                 Port to bind server and webhooks [8080]
