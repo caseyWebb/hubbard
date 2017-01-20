@@ -1,5 +1,7 @@
 # Hubbard
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/caseyWebb/hubbard.svg)](https://greenkeeper.io/)
+
 GitHub Deployments, Simplified.
 
 #### What it does
